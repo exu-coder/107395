@@ -1,21 +1,52 @@
+#!/usr/bin/env python3
+"""
+EXUCODER PROXY - Main Entry Point for Render
+"""
+
 import os
 import sys
-import json
-import base64
-import secrets
 import time
-from datetime import datetime, timedelta
-from functools import wraps
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, set_access_cookies, unset_jwt_cookies
-from flask_sqlalchemy import SQLAlchemy
-import bcrypt
-from dotenv import load_dotenv
 
-load_dotenv()
+def print_banner():
+    print("""
+╔═══════════════════════════════════════════════════════════════╗
+║  ███████╗██╗  ██╗██╗   ██╗    ██████╗ ██████╗ ██████╗ ███████╗
+║  ██╔════╝╚██╗██╔╝██║   ██║   ██╔════╝██╔═══██╗██╔══██╗██╔════╝
+║  █████╗   ╚███╔╝ ██║   ██║   ██║     ██║   ██║██║  ██║█████╗  
+║  ██╔══╝   ██╔██╗ ██║   ██║   ██║     ██║   ██║██║  ██║██╔══╝  
+║  ███████╗██╔╝ ██╗╚██████╔╝   ╚██████╗╚██████╔╝██████╔╝███████╗
+║  ╚══════╝╚═╝  ╚═╝ ╚═════╝     ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
+║                                                             ║
+║              𝐄𝐗𝐔𝐂𝐎𝐃𝐄𝐑 𝐏𝐑𝐎𝐗𝐘 𝐕𝟐.𝟎                         ║
+║         𝐉𝐖𝐓 𝐂𝐚𝐩𝐭𝐮𝐫𝐞 & 𝐒𝐰𝐢𝐩𝐞 𝐒𝐲𝐬𝐭𝐞𝐦                       ║
+╚═══════════════════════════════════════════════════════════════╝
+    """)
 
-# ... rest of the code ...
+def main():
+    print_banner()
+    
+    # Add backend directory to Python path
+    backend_dir = os.path.join(os.path.dirname(__file__), 'backend')
+    sys.path.insert(0, backend_dir)
+    
+    # Change to backend directory
+    os.chdir(backend_dir)
+    
+    print("[+] Starting EXUCODER Proxy Backend...")
+    print("[+] Server will be available at: http://localhost:5000")
+    print("[+] Press Ctrl+C to stop\n")
+    
+    try:
+        # Import app from backend
+        from app import app
+        app.run(host='0.0.0.0', port=5000, debug=False)
+    except KeyboardInterrupt:
+        print("\n[+] Shutting down...")
+    except Exception as e:
+        print(f"[!] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    main()
