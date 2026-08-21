@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EXUCODER PROXY - Launcher
+EXUCODER PROXY - Main Entry Point for Render
 """
 
 import os
@@ -35,11 +35,14 @@ def main():
     print("[+] Press Ctrl+C to stop\n")
     
     try:
-        subprocess.run([sys.executable, 'app.py'])
+        # Import and run app directly
+        from app import app
+        app.run(host='0.0.0.0', port=5000, debug=False)
     except KeyboardInterrupt:
         print("\n[+] Shutting down...")
     except Exception as e:
         print(f"[!] Error: {e}")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
