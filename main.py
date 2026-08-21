@@ -5,7 +5,6 @@ EXUCODER PROXY - Main Entry Point for Render
 
 import os
 import sys
-import time
 
 def print_banner():
     print("""
@@ -37,7 +36,6 @@ def main():
     print("[+] Press Ctrl+C to stop\n")
     
     try:
-        # Import app from backend
         from app import app
         app.run(host='0.0.0.0', port=5000, debug=False)
     except KeyboardInterrupt:
