@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+"""
+EXUCODER FF PROXY BACKEND
+JWT Capture & Swipe API Server
+"""
+
 import os
 import sys
 import json
@@ -17,7 +23,7 @@ from config import get_config
 # Import models
 from models import db, User, CapturedJWT, ProxyLog, SystemLog, generate_api_key, init_db
 
-# Create Flask app
+# Create Flask app - FIX: Use __name__ instead of hardcoded string
 app = Flask(__name__, 
             static_folder='../frontend',
             template_folder='../frontend')
@@ -30,7 +36,7 @@ cors_origins = app.config.get('CORS_ORIGINS', ['http://localhost:5000'])
 CORS(app, supports_credentials=True, origins=cors_origins)
 jwt = JWTManager(app)
 db.init_app(app)
-socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False)
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False, async_mode='eventlet')
 
 # Initialize database
 init_db(app)
@@ -651,7 +657,19 @@ def handle_disconnect():
 
 if __name__ == '__main__':
     print(f"""
- http://localhost:5000            
+╔═══════════════════════════════════════════════════════════════╗
+║  🚀 EXUCODER FF PROXY BACKEND STARTED                        ║
+║  📍 http://localhost:5000                                    ║
+║  📍 http://localhost:5000/login     (Login)                 ║
+║  📍 http://localhost:5000/dashboard  (Dashboard)            ║
+║  📍 http://localhost:5000/admin      (Admin Panel)          ║
+║  📍 http://localhost:5000/settings   (Settings)             ║
+║  📍 http://localhost:5000/help       (Help)                 ║
+║                                                             ║
+║  📦 SQLite Database: exucoder.db                            ║
+║  🟢 Socket.IO Real-time Updates                             ║
+╚═══════════════════════════════════════════════════════════════╝
     """)
     
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
+    # FIX: Use app.run instead of socketio.run for Render compatibility
+    app.run(host='0.0.0.0', port=5000, debug=False)
