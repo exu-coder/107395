@@ -15,15 +15,12 @@ from functools import wraps
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, set_access_cookies, unset_jwt_cookies
-from flask_socketio import SocketIO, emit
+from flask_sqlalchemy import SQLAlchemy
 
 # Import config
 from config import get_config
 
-# Import models
-from models import db, User, CapturedJWT, ProxyLog, SystemLog, generate_api_key, init_db
-
-# Create Flask app - FIX: Use __name__ instead of hardcoded string
+# Create Flask app
 app = Flask(__name__, 
             static_folder='../frontend',
             template_folder='../frontend')
@@ -35,8 +32,10 @@ app.config.from_object(get_config())
 cors_origins = app.config.get('CORS_ORIGINS', ['http://localhost:5000'])
 CORS(app, supports_credentials=True, origins=cors_origins)
 jwt = JWTManager(app)
+
+# Import models and initialize database
+from models import db, User, CapturedJWT, ProxyLog, SystemLog, generate_api_key, init_db
 db.init_app(app)
-socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False, async_mode='eventlet')
 
 # Initialize database
 init_db(app)
@@ -640,18 +639,6 @@ def serve_static(path):
     return send_from_directory('../frontend', path)
 
 # =============================================================================
-# SOCKET.IO EVENTS
-# =============================================================================
-
-@socketio.on('connect')
-def handle_connect():
-    print(f"[+] Client connected: {request.sid}")
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    print(f"[-] Client disconnected: {request.sid}")
-
-# =============================================================================
 # MAIN
 # =============================================================================
 
@@ -667,9 +654,7 @@ if __name__ == '__main__':
 ║  📍 http://localhost:5000/help       (Help)                 ║
 ║                                                             ║
 ║  📦 SQLite Database: exucoder.db                            ║
-║  🟢 Socket.IO Real-time Updates                             ║
 ╚═══════════════════════════════════════════════════════════════╝
     """)
     
-    # FIX: Use app.run instead of socketio.run for Render compatibility
     app.run(host='0.0.0.0', port=5000, debug=False)
