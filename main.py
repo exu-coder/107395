@@ -24,13 +24,6 @@ def print_banner():
 def main():
     print_banner()
     
-    # Add backend directory to Python path
-    backend_dir = os.path.join(os.path.dirname(__file__), 'backend')
-    sys.path.insert(0, backend_dir)
-    
-    # Change to backend directory
-    os.chdir(backend_dir)
-    
     print("[+] Starting EXUCODER Proxy Backend...")
     print("[+] Server will be available at: http://localhost:5000")
     print("[+] Press Ctrl+C to stop\n")
