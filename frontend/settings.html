@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EXUCODER PROXY · Settings</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+            background: #0a0e1a;
+        }
+
+        .bg-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-image {
+            position: absolute;
+            inset: 0;
+            background-image: url('https://i.ibb.co.com/k2ZL25g3/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.85;
+            animation: slowZoom 25s ease-in-out infinite alternate;
+            transform-origin: center;
+        }
+
+        @keyframes slowZoom {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.08) rotate(0.5deg); }
+            100% { transform: scale(1.12) rotate(-0.5deg); }
+        }
+
+        .bg-overlay {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 30% 40%, rgba(123, 47, 252, 0.12) 0%, transparent 55%),
+                radial-gradient(circle at 70% 60%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.15) 0%, transparent 70%);
+            animation: pulseOverlay 10s ease-in-out infinite alternate;
+            mix-blend-mode: overlay;
+        }
+
+        @keyframes pulseOverlay {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .bg-grid {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            animation: gridMove 30s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.25;
+            animation: floatBlob 25s ease-in-out infinite;
+            mix-blend-mode: screen;
+        }
+
+        .blob.a { width: 500px; height: 500px; background: #7b2ffc; top: -150px; left: -150px; animation-delay: 0s; }
+        .blob.b { width: 450px; height: 450px; background: #00d4ff; bottom: -150px; right: -150px; animation-delay: -8s; opacity: 0.2; }
+        .blob.c { width: 350px; height: 350px; background: #ec4899; top: 45%; left: 55%; animation-delay: -16s; opacity: 0.15; }
+        .blob.d { width: 300px; height: 300px; background: #f59e0b; top: 10%; left: 30%; animation-delay: -5s; opacity: 0.12; }
+
+        @keyframes floatBlob {
+            0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            25% { transform: translate(80px, -60px) scale(1.1) rotate(5deg); }
+            50% { transform: translate(-40px, 80px) scale(0.95) rotate(-3deg); }
+            75% { transform: translate(60px, 40px) scale(1.05) rotate(4deg); }
+        }
+
+        /* ----- NAVBAR ----- */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 14px 32px;
+            background: rgba(10, 14, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #a78bfa, #22d3ee);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .navbar-brand img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px 8px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .navbar-user .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7b2ffc, #00d4ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: white;
+        }
+
+        .navbar-user .username {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .btn-logout {
+            padding: 8px 18px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 30px;
+            color: #f87171;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-logout:hover {
+            background: rgba(239, 68, 68, 0.25);
+            transform: translateY(-1px);
+        }
+
+        /* ----- SIDEBAR ----- */
+        .settings-nav {
+            position: fixed;
+            top: 76px;
+            left: 0;
+            bottom: 0;
+            width: 200px;
+            padding: 20px 12px;
+            background: rgba(10, 14, 26, 0.6);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .settings-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.5);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .settings-nav-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.8);
+        }
+
+        .settings-nav-item.active {
+            background: rgba(167, 139, 250, 0.15);
+            color: #a78bfa;
+            border: 1px solid rgba(167, 139, 250, 0.1);
+        }
+
+        .settings-nav-item i {
+            width: 18px;
+            text-align: center;
+        }
+
+        /* ----- MAIN ----- */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            margin-left: 200px;
+            padding: 90px 40px 40px;
+            max-width: 800px;
+        }
+
+        /* ----- GLASS ----- */
+        .glass {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(25px) saturate(160%);
+            -webkit-backdrop-filter: blur(25px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .glass:hover {
+            border-color: rgba(255,255,255,0.12);
+        }
+
+        /* ----- SECTIONS ----- */
+        .settings-section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+
+        .section-subtitle {
+            color: rgba(255,255,255,0.4);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .settings-card {
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .settings-card .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 4px;
+        }
+
+        .settings-card .card-desc {
+            font-size: 13px;
+            color: rgba(255,255,255,0.3);
+            margin-bottom: 14px;
+        }
+
+        /* ----- FORM ----- */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: rgba(167, 139, 250, 0.4);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.05);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255,255,255,0.2);
+        }
+
+        .form-group select option {
+            background: #1a1f3a;
+            color: white;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        /* ----- BUTTONS ----- */
+        .btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7b2ffc, #00d4ff);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(123, 47, 252, 0.3);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.15);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        /* ----- TOGGLE ----- */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .toggle-group:last-child {
+            border-bottom: none;
+        }
+
+        .toggle-info .toggle-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .toggle-info .toggle-desc {
+            font-size: 12px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .toggle-switch {
+            width: 44px;
+            height: 24px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 30px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #7b2ffc, #00d4ff);
+        }
+
+        .toggle-switch .toggle-dot {
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active .toggle-dot {
+            left: 23px;
+        }
+
+        /* ----- TOAST ----- */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 18px;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            border-color: rgba(52, 211, 153, 0.3);
+            background: rgba(52, 211, 153, 0.1);
+        }
+
+        .toast.error {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* ----- RESPONSIVE ----- */
+        @media (max-width: 768px) {
+            .settings-nav {
+                position: fixed;
+                bottom: 0;
+                top: auto;
+                width: 100%;
+                height: auto;
+                padding: 10px 12px;
+                background: rgba(10, 14, 26, 0.95);
+                backdrop-filter: blur(20px);
+                border-right: none;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                display: flex;
+                overflow-x: auto;
+                gap: 4px;
+                z-index: 50;
+            }
+            .settings-nav-item { padding: 8px 12px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+            .settings-nav-item span { display: none; }
+            .main-content { margin-left: 0; padding: 80px 16px 100px; }
+            .navbar { padding: 12px 16px; }
+            .navbar-brand { font-size: 16px; }
+            .navbar-brand img { width: 28px; height: 28px; }
+            .navbar-user .username { display: none; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .settings-card { padding: 16px; }
+            .section-title { font-size: 20px; }
+            .btn { width: 100%; justify-content: center; }
+            .blob.a, .blob.b, .blob.c, .blob.d { filter: blur(60px); opacity: 0.15; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background -->
+    <div class="bg-container">
+        <div class="bg-image" id="bgImage"></div>
+        <div class="bg-overlay"></div>
+        <div class="bg-grid"></div>
+        <div class="blob a"></div>
+        <div class="blob b"></div>
+        <div class="blob c"></div>
+        <div class="blob d"></div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="/dashboard" class="navbar-brand">
+            <img src="https://i.ibb.co.com/gBfhXFN/mrhimcho-fyp-pfp-virelvideo-unfrezzmyaccount-JPEG-1.jpg" alt="Logo" />
+            𝐄𝐗𝐔𝐂𝐎𝐃𝐄𝐑
+        </a>
+        <div class="navbar-actions">
+            <div class="navbar-user">
+                <div class="avatar" id="userAvatar">U</div>
+                <span class="username" id="userName">User</span>
+            </div>
+            <button class="btn-logout" onclick="handleLogout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- Settings Nav -->
+    <nav class="settings-nav">
+        <button class="settings-nav-item active" onclick="switchSection('profile')">
+            <i class="fas fa-user"></i> <span>Profile</span>
+        </button>
+        <button class="settings-nav-item" onclick="switchSection('security')">
+            <i class="fas fa-shield-alt"></i> <span>Security</span>
+        </button>
+        <button class="settings-nav-item" onclick="switchSection('preferences')">
+            <i class="fas fa-sliders-h"></i> <span>Preferences</span>
+        </button>
+        <button class="settings-nav-item" onclick="switchSection('danger')">
+            <i class="fas fa-exclamation-triangle" style="color: #f87171;"></i>
+            <span style="color: #f87171;">Danger</span>
+        </button>
+    </nav>
+
+    <!-- Main -->
+    <div class="main-content">
+
+        <!-- Profile -->
+        <div id="section-profile" class="settings-section active">
+            <h2 class="section-title">𝐏𝐫𝐨𝐟𝐢𝐥𝐞</h2>
+            <p class="section-subtitle">Manage your account information</p>
+
+            <div class="glass settings-card">
+                <div class="card-title">Personal Information</div>
+                <div class="card-desc">Update your profile details</div>
+
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="profileUsername" placeholder="Your username" />
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="profileEmail" placeholder="your@email.com" disabled />
+                </div>
+
+                <button class="btn btn-primary" onclick="updateProfile()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+
+        <!-- Security -->
+        <div id="section-security" class="settings-section">
+            <h2 class="section-title">𝐒𝐞𝐜𝐮𝐫𝐢𝐭𝐲</h2>
+            <p class="section-subtitle">Manage your security settings</p>
+
+            <div class="glass settings-card">
+                <div class="card-title">Change Password</div>
+                <div class="card-desc">Update your account password</div>
+
+                <div class="form-group">
+                    <label>Current Password</label>
+                    <input type="password" id="currentPassword" placeholder="Enter current password" />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="newPassword" placeholder="Enter new password" />
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="confirmPassword" placeholder="Confirm new password" />
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="changePassword()">
+                    <i class="fas fa-lock"></i> Update Password
+                </button>
+            </div>
+        </div>
+
+        <!-- Preferences -->
+        <div id="section-preferences" class="settings-section">
+            <h2 class="section-title">𝐏𝐫𝐞𝐟𝐞𝐫𝐞𝐧𝐜𝐞𝐬</h2>
+            <p class="section-subtitle">Customize your experience</p>
+
+            <div class="glass settings-card">
+                <div class="card-title">Settings</div>
+
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <span class="toggle-label">Auto-swipe</span>
+                        <span class="toggle-desc">Automatically replace captured JWTs</span>
+                    </div>
+                    <div class="toggle-switch" onclick="toggleSwitch(this)">
+                        <div class="toggle-dot"></div>
+                    </div>
+                </div>
+
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <span class="toggle-label">Save logs</span>
+                        <span class="toggle-desc">Save detailed proxy activity logs</span>
+                    </div>
+                    <div class="toggle-switch active" onclick="toggleSwitch(this)">
+                        <div class="toggle-dot"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger -->
+        <div id="section-danger" class="settings-section">
+            <h2 class="section-title" style="color: #f87171;">𝐃𝐚𝐧𝐠𝐞𝐫 𝐙𝐨𝐧𝐞</h2>
+            <p class="section-subtitle">Irreversible actions</p>
+
+            <div class="glass settings-card" style="border-color: rgba(239, 68, 68, 0.2);">
+                <div class="card-title" style="color: #f87171;">Clear All Data</div>
+                <div class="card-desc">Permanently delete all your captured JWTs and logs</div>
+                <button class="btn btn-danger" onclick="clearAllData()">
+                    <i class="fas fa-trash-alt"></i> Clear All Data
+                </button>
+            </div>
+
+            <div class="glass settings-card" style="border-color: rgba(239, 68, 68, 0.2);">
+                <div class="card-title" style="color: #f87171;">Delete Account</div>
+                <div class="card-desc">Permanently delete your account and all associated data</div>
+                <button class="btn btn-danger" onclick="deleteAccount()">
+                    <i class="fas fa-user-times"></i> Delete Account
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // =====================================================================
+        // API HELPER
+        // =====================================================================
+        async function apiCall(url, method = 'GET', data = null) {
+            const options = { method, credentials: 'include', headers: { 'Content-Type': 'application/json' } };
+            if (data) options.body = JSON.stringify(data);
+            const response = await fetch(url, options);
+            const result = await response.json();
+            return { response, result };
+        }
+
+        // =====================================================================
+        // TOAST
+        // =====================================================================
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show ' + type;
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // =====================================================================
+        // BACKGROUND
+        // =====================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            const bgImage = document.getElementById('bgImage');
+            const img = new Image();
+            img.onload = function() {
+                bgImage.style.backgroundImage = "url('https://i.ibb.co.com/k2ZL25g3/background.jpg')";
+                bgImage.classList.remove('error');
+            };
+            img.onerror = function() { bgImage.classList.add('error'); };
+            img.src = 'https://i.ibb.co.com/k2ZL25g3/background.jpg';
+        });
+
+        // =====================================================================
+        // AUTH CHECK
+        // =====================================================================
+        let currentUser = null;
+
+        async function checkAuth() {
+            try {
+                const { response, result } = await apiCall('/api/auth/verify', 'GET');
+                if (response.ok) {
+                    currentUser = result;
+                    document.getElementById('userAvatar').textContent = (result.username || 'U')[0].toUpperCase();
+                    document.getElementById('userName').textContent = result.username || 'User';
+                    document.getElementById('profileUsername').value = result.username || '';
+                    document.getElementById('profileEmail').value = result.email || '';
+                } else {
+                    window.location.href = '/login';
+                }
+            } catch (e) {
+                window.location.href = '/login';
+            }
+        }
+
+        // =====================================================================
+        // SECTION SWITCHING
+        // =====================================================================
+        function switchSection(section) {
+            document.querySelectorAll('.settings-nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.settings-nav-item[onclick*="${section}"]`).classList.add('active');
+            document.querySelectorAll('.settings-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`section-${section}`).classList.add('active');
+        }
+
+        // =====================================================================
+        // PROFILE UPDATE
+        // =====================================================================
+        async function updateProfile() {
+            const username = document.getElementById('profileUsername').value.trim();
+            if (!username || username.length < 3) {
+                showToast('⚠️ Username must be at least 3 characters', 'error');
+                return;
+            }
+            try {
+                const { response } = await apiCall('/api/user/update', 'POST', { username });
+                if (response.ok) {
+                    showToast('✅ Profile updated!', 'success');
+                    await checkAuth();
+                } else {
+                    showToast('❌ Failed to update profile', 'error');
+                }
+            } catch (error) {
+                showToast('❌ ' + error.message, 'error');
+            }
+        }
+
+        // =====================================================================
+        // CHANGE PASSWORD
+        // =====================================================================
+        async function changePassword() {
+            const current = document.getElementById('currentPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+
+            if (!current || !newPass || !confirm) {
+                showToast('⚠️ Please fill in all fields', 'error');
+                return;
+            }
+            if (newPass.length < 6) {
+                showToast('⚠️ Password must be at least 6 characters', 'error');
+                return;
+            }
+            if (newPass !== confirm) {
+                showToast('⚠️ Passwords do not match', 'error');
+                return;
+            }
+
+            try {
+                const { response } = await apiCall('/api/user/change-password', 'POST', {
+                    current_password: current,
+                    new_password: newPass
+                });
+                if (response.ok) {
+                    showToast('✅ Password changed!', 'success');
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                } else {
+                    showToast('❌ ' + (result.error || 'Failed to change password'), 'error');
+                }
+            } catch (error) {
+                showToast('❌ ' + error.message, 'error');
+            }
+        }
+
+        // =====================================================================
+        // TOGGLE SWITCH
+        // =====================================================================
+        function toggleSwitch(el) {
+            el.classList.toggle('active');
+            const label = el.closest('.toggle-group').querySelector('.toggle-label');
+            const isActive = el.classList.contains('active');
+            showToast(`✅ ${label.textContent} ${isActive ? 'enabled' : 'disabled'}`, 'success');
+        }
+
+        // =====================================================================
+        // DANGER ZONE
+        // =====================================================================
+        async function clearAllData() {
+            if (!confirm('⚠️ This will delete ALL your captured JWTs and logs. Are you sure?')) return;
+            try {
+                const { response } = await apiCall('/api/user/clear-data', 'POST');
+                if (response.ok) {
+                    showToast('✅ All data cleared', 'success');
+                } else {
+                    showToast('❌ Failed to clear data', 'error');
+                }
+            } catch (error) {
+                showToast('❌ ' + error.message, 'error');
+            }
+        }
+
+        async function deleteAccount() {
+            if (!confirm('⚠️ This will PERMANENTLY delete your account. Type "DELETE" to confirm.')) return;
+            const confirmText = prompt('Type "DELETE" to confirm:');
+            if (confirmText !== 'DELETE') { showToast('❌ Cancelled', 'error'); return; }
+
+            try {
+                const { response } = await apiCall('/api/user/delete', 'DELETE');
+                if (response.ok) {
+                    showToast('✅ Account deleted', 'success');
+                    setTimeout(() => window.location.href = '/login', 1500);
+                } else {
+                    showToast('❌ Failed to delete account', 'error');
+                }
+            } catch (error) {
+                showToast('❌ ' + error.message, 'error');
+            }
+        }
+
+        // =====================================================================
+        // LOGOUT
+        // =====================================================================
+        async function handleLogout() {
+            try {
+                await apiCall('/api/auth/logout', 'POST');
+                localStorage.removeItem('exu_user');
+                window.location.href = '/login';
+            } catch (error) {
+                showToast('❌ ' + error.message, 'error');
+            }
+        }
+
+        // =====================================================================
+        // INIT
+        // =====================================================================
+        document.addEventListener('DOMContentLoaded', checkAuth);
+
+        window.switchSection = switchSection;
+        window.updateProfile = updateProfile;
+        window.changePassword = changePassword;
+        window.toggleSwitch = toggleSwitch;
+        window.clearAllData = clearAllData;
+        window.deleteAccount = deleteAccount;
+        window.handleLogout = handleLogout;
+    </script>
+
+</body>
+</html>
